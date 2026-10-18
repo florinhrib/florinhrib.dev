@@ -260,13 +260,14 @@
     .home {
       max-inline-size: 76rem;
       grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.6fr);
-      grid-template-areas: "intro work" "intro log" "intro contact";
+      grid-template-areas: "intro work" "intro stack" "intro log" "intro contact";
       column-gap: var(--space-l);
       row-gap: var(--space-l);
       align-items: start;
     }
     .pane-intro { grid-area: intro; }
     .pane-work { grid-area: work; }
+    .pane-stack { grid-area: stack; }
     .pane-log { grid-area: log; }
     .pane-contact { grid-area: contact; }
   }
@@ -274,8 +275,8 @@
     .home {
       max-inline-size: 150rem;
       grid-template-columns: minmax(19rem, 34ch) minmax(0, 64ch) minmax(0, 60ch);
-      grid-template-rows: auto 1fr;
-      grid-template-areas: "intro work log" "intro work contact";
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: "intro work log" "intro work stack" "intro work contact";
       justify-content: center;
     }
     .pane-contact { align-self: start; }
@@ -543,6 +544,14 @@
     line-height: 1.6;
   }
   .tag-status { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 45%, var(--line)); }
+
+  /* ---- stack: compact groups on the home page, a list per group on /stack ---- */
+  .stack { display: grid; gap: var(--space-s); }
+  .stack dt, .stack-detail dt { color: var(--dim); font-size: var(--step--1); }
+  .stack-detail { display: grid; gap: var(--space-xs); }
+  .stack-detail dt { color: var(--bright); font-size: var(--step-0); font-weight: 600; }
+  .stack-detail dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1ch; }
+  .stack + .also { margin-block-start: var(--space-s); }
 
   .more { margin-block-start: var(--space-m); font-size: var(--step--1); }
   .also { color: var(--dim); font-size: var(--step--1); max-inline-size: var(--measure); }
