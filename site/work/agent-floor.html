@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Floor · Florin Hrib</title>
+  <meta name="description" content="Agent Floor, a desktop control room for a team of AI agents: what it does, the decisions behind it, a bug and its fix, and its limits.">
+  <link rel="canonical" href="https://florinhrib.dev/work/agent-floor">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b1211" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f7f4ea" media="(prefers-color-scheme: light)">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Agent Floor · Florin Hrib">
+  <meta property="og:description" content="A desktop control room for a team of AI agents, and its limits.">
+  <meta property="og:url" content="https://florinhrib.dev/work/agent-floor">
+  <meta property="og:image" content="https://florinhrib.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Florin Hrib, agent systems on Claude, with his illustrated portrait.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/icon-180.png">
+  <link rel="manifest" href="../site.webmanifest">
+  <link rel="preload" href="../assets/fonts/jetbrains-mono-400-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../theme.js"></script>
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="bar">
+    <div class="bar-in">
+      <a class="session" href="../">florinhrib</a>
+      <nav class="windows" aria-label="Main">
+        <ol>
+          <li><a href="../"><span class="win-n" aria-hidden="true">0</span>home</a></li>
+          <li><a href="./" aria-current="page"><span class="win-n" aria-hidden="true">1</span>work</a></li>
+          <li><a href="../cv.html"><span class="win-n" aria-hidden="true">2</span>cv</a></li>
+        </ol>
+      </nav>
+      <button class="theme js-only" type="button" data-theme-toggle><span aria-hidden="true">&#9680;</span><span class="theme-label">theme</span></button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" class="page doc">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../">home</a></li>
+        <li><a href="./">work</a></li>
+        <li aria-current="page">agent-floor</li>
+      </ol>
+    </nav>
+
+    <header class="doc-head">
+      <h1>Agent Floor</h1>
+      <p class="lede">A desktop control room for a team of AI agents.</p>
+    </header>
+
+    <aside class="pane facts" aria-labelledby="facts-title">
+      <h2 class="pane-title" id="facts-title">facts</h2>
+      <dl>
+        <div><dt>status</dt><dd>Lab builds. No outside users yet.</dd></div>
+        <div><dt>code</dt><dd>Private repository</dd></div>
+        <div><dt>stack</dt><dd>Electron, React, Node.js, Vite, node-pty</dd></div>
+        <div><dt>tests</dt><dd>Over 1,300 automated tests</dd></div>
+        <div><dt>releases</dt><dd>Each one ships with a rollback</dd></div>
+      </dl>
+    </aside>
+
+    <nav class="pane toc" aria-labelledby="toc-title">
+      <h2 class="pane-title" id="toc-title">contents</h2>
+      <ol>
+        <li><a href="#what">What it does</a></li>
+        <li><a href="#how">How it fits together</a></li>
+        <li><a href="#decisions">Decisions</a></li>
+        <li><a href="#broke">What broke</a></li>
+        <li><a href="#limits">Limits</a></li>
+      </ol>
+    </nav>
+
+    <article class="doc-body prose">
+      <section id="what" aria-labelledby="what-title">
+        <h2 id="what-title">What it does</h2>
+        <p>Agent Floor runs Claude Code, Codex and Grok agents as command-line sessions inside one desktop app, and I can reach them from my phone through messaging channels. An agent can also be given its own Docker Linux desktop to work in.</p>
+        <p>It is the main thing I build. The code is private, and it has no outside users yet.</p>
+      </section>
+
+      <section id="how" aria-labelledby="how-title">
+        <h2 id="how-title">How it fits together</h2>
+        <figure class="flow-fig">
+          <ol class="flow">
+          <li>
+            <span class="flow-k">ask</span>
+            <strong>Me, at the desk or from my phone</strong>
+            A message reaches the app through the desktop window or a messaging channel.
+          </li>
+          <li>
+            <span class="flow-k">route</span>
+            <strong>Agent Floor (Electron, React, Node.js)</strong>
+            The app holds the roster of agents and their sessions.
+          </li>
+          <li>
+            <span class="flow-k">run</span>
+            <strong>Agent sessions</strong>
+            Each agent is a real command-line tool running as a child process, locally or over SSH.
+            <span class="tags"><span class="tag">claude</span><span class="tag">codex</span><span class="tag">grok</span></span>
+          </li>
+          <li>
+            <span class="flow-k">check</span>
+            <strong>Approval gate</strong>
+            An approval card with trust levels for risky actions. <span class="warn">Enforcement was off by default at the 12 October review.</span>
+          </li>
+          <li>
+            <span class="flow-k">optional</span>
+            <strong>Docker Linux desktop</strong>
+            An agent that needs a full computer can be given one.
+          </li>
+        </ol>
+          <figcaption>How a request moves through Agent Floor.</figcaption>
+        </figure>
+      </section>
+
+      <section id="decisions" aria-labelledby="decisions-title">
+        <h2 id="decisions-title">Decisions</h2>
+        <ul>
+          <li><strong>Real command-line tools.</strong> Each agent is a real command-line tool (claude, codex, grok) that the app starts and manages.</li>
+          <li><strong>An approval gate for risky actions.</strong> I added an approval card with trust levels. Enforcement was still off by default at the 12 October review, which the limits below explain.</li>
+          <li><strong>Tests and a way back.</strong> The app has over 1,300 automated tests, and every release ships with a rollback.</li>
+        </ul>
+      </section>
+
+      <section id="broke" aria-labelledby="broke-title">
+        <h2 id="broke-title">What broke</h2>
+        <p>After I switched an agent from Grok to Claude Opus, the picker showed the new model, but the agent's persona file and status card still named the old engine. Claude Code had also frozen the system prompt from the first message of that session and was replaying it on every resume.</p>
+        <p>The fix: every turn now carries a "who is speaking" card built from the live roster, Claude Code starts with the system prompt snapshot turned off, and the personas no longer name an engine. It went into a Linux lab build, not a public release.</p>
+      </section>
+
+      <section id="limits" aria-labelledby="limits-title">
+        <h2 id="limits-title">Limits</h2>
+        <p>I ran a multi-agent architecture review of the runtime. It showed that the agents were not yet sandboxed: they ran as my own user, and gate enforcement was off by default. A command-line tool running as the same user is not a sandbox.</p>
+        <p>The review recommended a thin policy layer instead of another agent framework: an authorise check that answers allow, deny or requires approval and fails closed, plus an emergency stop the interface cannot clear. That is at the design stage. Nothing from it is built yet.</p>
+        <p class="note">This page describes the app as my own review found it on 12 October 2026.</p>
+      </section>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-in">
+      <p>Florin Hrib · Kent, UK · <a href="mailto:hello@florinstudio.uk">hello@florinstudio.uk</a></p>
+      <p class="colophon">Plain HTML and CSS with a little JavaScript. No framework, no cookies, no tracking. Updated <time datetime="2026-10-18">18 Oct 2026</time>.</p>
+      <p class="eof" aria-hidden="true"><span class="prompt">$</span> <span class="cursor"></span></p>
+    </div>
+  </footer>
+</body>
+</html>

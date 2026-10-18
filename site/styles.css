@@ -1,0 +1,758 @@
+/* florinhrib.dev: one stylesheet, no framework, no build step.
+   The site reads like a tmux session: a status line on top, numbered windows as navigation,
+   and panes that split as the screen grows (one pane on a phone, two on a laptop, three on an
+   ultra-wide). Layers run in cascade order. */
+@layer reset, tokens, base, layout, components, motion, print;
+
+/* JetBrains Mono 2.304 (SIL OFL 1.1, assets/fonts/OFL.txt): variable weight 400 to 600,
+   subset to the glyphs this site uses, ligatures removed. 15.6 KB, preloaded. */
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("assets/fonts/jetbrains-mono-400-600.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+/* Metric-matched fallbacks, so the swap to the web font barely moves the text. */
+@font-face {
+  font-family: "Mono Fallback Menlo";
+  src: local("Menlo Regular"), local("Menlo-Regular"), local("Menlo");
+  size-adjust: 99.66%;
+  ascent-override: 102.35%;
+  descent-override: 30.1%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Mono Fallback Courier";
+  src: local("Courier New");
+  size-adjust: 99.98%;
+  ascent-override: 102.02%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body, h1, h2, h3, p, ol, ul, dl, dd, figure { margin: 0; }
+  ol[class], ul[class], nav ol, nav ul { list-style: none; padding: 0; }
+  img, svg, canvas, picture { display: block; max-inline-size: 100%; }
+  button { font: inherit; color: inherit; }
+}
+
+@layer tokens {
+  :root {
+    --font-mono: "JetBrains Mono", "Mono Fallback Menlo", "Mono Fallback Courier", ui-monospace, monospace;
+
+    /* Fluid type (Utopia method): 15 px at 360 wide, ratio 1.2, to 17 px at 1440, ratio 1.25.
+       It stops growing at 1440: extra width becomes more panes, not bigger letters. */
+    --step--1: clamp(0.7812rem, 0.7583rem + 0.1019vw, 0.85rem);
+    --step-0:  clamp(0.9375rem, 0.8958rem + 0.1852vw, 1.0625rem);
+    --step-1:  clamp(1.125rem, 1.0573rem + 0.3009vw, 1.3281rem);
+    --step-2:  clamp(1.35rem, 1.2466rem + 0.4595vw, 1.6602rem);
+    --step-3:  clamp(1.62rem, 1.4683rem + 0.6744vw, 2.0752rem);
+    --step-4:  clamp(1.944rem, 1.7273rem + 0.963vw, 2.594rem);
+
+    /* Fluid space, same method. */
+    --space-3xs: 0.25rem;
+    --space-2xs: 0.5rem;
+    --space-xs: clamp(0.6875rem, 0.6458rem + 0.1852vw, 0.8125rem);
+    --space-s:  clamp(0.9375rem, 0.8958rem + 0.1852vw, 1.0625rem);
+    --space-m:  clamp(1.375rem, 1.2917rem + 0.3704vw, 1.625rem);
+    --space-l:  clamp(1.875rem, 1.7917rem + 0.3704vw, 2.125rem);
+    --space-xl: clamp(2.8125rem, 2.6875rem + 0.5556vw, 3.1875rem);
+    --gutter:   clamp(1rem, 0.3333rem + 2.963vw, 3rem);
+
+    /* In a monospace face 1ch is exactly one character, so measures are literal. */
+    --measure: 68ch;
+    --bar-h: 2.75rem;
+    --radius: 6px;
+
+    /* Motion tokens. The portrait has its own timings in pixel-portrait.js. */
+    --dur-1: 120ms;
+    --dur-2: 200ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Colour, dark (default). Teal-black and cream come from the portrait; the olive
+       accent is kept from the first draft. Contrast on --bg: text 12.6, dim 7.1,
+       accent 12.0, link 11.4, control borders 3.7. */
+    color-scheme: dark;
+    --bg: #0b1211;
+    --surface: #111b19;
+    --line: #2a3935;
+    --control: #5c736c;
+    --text: #d8d2c2;
+    --bright: #f6f2e6;
+    --dim: #93a19b;
+    --accent: #c6d58a;
+    --on-accent: #0b1211;
+    --link: #d9c7a5;
+    --teal: #86c2b6;
+    --portrait-bg: #003b36;
+  }
+
+  /* Light: warm paper. Contrast on --bg: text 13.4, dim 5.7, accent 6.3, link 6.4,
+     control borders 3.6. Used when the system asks for it, unless the toggle chose dark. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #f7f4ea;
+      --surface: #eee9db;
+      --line: #cfc6b0;
+      --control: #857f6e;
+      --text: #1f2a28;
+      --bright: #0d1615;
+      --dim: #58635f;
+      --accent: #4a6118;
+      --on-accent: #f7f4ea;
+      --link: #7a4f1d;
+      --teal: #17675d;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f7f4ea;
+    --surface: #eee9db;
+    --line: #cfc6b0;
+    --control: #857f6e;
+    --text: #1f2a28;
+    --bright: #0d1615;
+    --dim: #58635f;
+    --accent: #4a6118;
+    --on-accent: #f7f4ea;
+    --link: #7a4f1d;
+    --teal: #17675d;
+  }
+  @media (prefers-contrast: more) {
+    :root { --dim: var(--text); --line: var(--control); }
+  }
+  /* Large desktop monitors at 1x: one gentle step up so text is not tiny at arm's length. */
+  @media (min-width: 125rem) and (min-height: 50rem) {
+    :root { font-size: 106.25%; }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    scroll-padding-block-start: calc(var(--bar-h) + var(--space-m));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+  body {
+    min-block-size: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    line-height: 1.65;
+    font-variant-ligatures: none;
+  }
+  main { flex: 1; }
+  main:focus { outline: none; }
+  h1, h2, h3 { color: var(--bright); font-weight: 600; line-height: 1.2; text-wrap: balance; }
+  p, li, dd { text-wrap: pretty; }
+  a {
+    color: var(--link);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    transition: color var(--dur-1) var(--ease-out), text-decoration-color var(--dur-1) var(--ease-out);
+  }
+  a:hover { color: var(--accent); }
+  strong { color: var(--bright); font-weight: 600; }
+  code { font: inherit; color: var(--teal); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  ::selection { background: var(--accent); color: var(--on-accent); }
+  time { font-variant-numeric: tabular-nums; }
+}
+
+@layer layout {
+  /* ---- the status line (tmux style): session, numbered windows, theme switch ---- */
+  .bar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-block-end: 1px solid var(--line);
+  }
+  @media (max-height: 30em) {
+    .bar { position: static; }
+  }
+  .bar-in {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-block-size: var(--bar-h);
+    max-inline-size: 160rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    font-size: var(--step--1);
+  }
+  .session {
+    flex: none;
+    padding: 0.15rem 0.6ch;
+    border-radius: 3px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .session:hover { color: var(--on-accent); background: var(--bright); }
+  .windows { flex: 1; min-inline-size: 0; }
+  .windows ol { display: flex; flex-wrap: wrap; gap: 0 0.25rem; }
+  .windows a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2rem;
+    padding: 0 0.6ch;
+    border-radius: 3px;
+    color: var(--dim);
+    text-decoration: none;
+  }
+  .windows a:hover { color: var(--bright); }
+  .win-n { color: var(--accent); }
+  .win-n::after { content: ":"; content: ":" / ""; color: var(--dim); }
+  .windows a[aria-current] { color: var(--bright); background: color-mix(in oklab, var(--accent) 16%, transparent); }
+  .windows a[aria-current]::after { content: "*"; content: "*" / ""; color: var(--accent); }
+
+  .theme {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5ch;
+    min-block-size: 2rem;
+    padding: 0 0.8ch;
+    border: 1px solid var(--control);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .theme:hover { border-color: var(--accent); color: var(--bright); }
+  /* The smallest phones: the switch shows only its icon (its aria-label still names it),
+     so the status line stays on one line like tmux's. */
+  @media (max-width: 25rem) {
+    .bar-in { gap: 0.5ch; }
+    .theme { min-inline-size: 2.75rem; justify-content: center; }
+    .theme .theme-label { display: none; }
+  }
+  .theme[hidden] { display: none; }
+
+  /* ---- shared page frame ---- */
+  .page {
+    inline-size: 100%;
+    max-inline-size: calc(var(--measure) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding: var(--space-l) var(--gutter) var(--space-xl);
+  }
+
+  /* ---- home: one pane on a phone, two from 1024 px, three from 1760 px ---- */
+  .home {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 64rem) {
+    .home {
+      max-inline-size: 76rem;
+      grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.6fr);
+      grid-template-areas: "intro work" "intro log" "intro contact";
+      column-gap: var(--space-l);
+      row-gap: var(--space-l);
+      align-items: start;
+    }
+    .pane-intro { grid-area: intro; }
+    .pane-work { grid-area: work; }
+    .pane-log { grid-area: log; }
+    .pane-contact { grid-area: contact; }
+  }
+  @media (min-width: 110rem) {
+    .home {
+      max-inline-size: 150rem;
+      grid-template-columns: minmax(19rem, 34ch) minmax(0, 64ch) minmax(0, 60ch);
+      grid-template-rows: auto 1fr;
+      grid-template-areas: "intro work log" "intro work contact";
+      justify-content: center;
+    }
+    .pane-contact { align-self: start; }
+  }
+
+  /* ---- case studies and the CV: one reading column, side panes when there is room ---- */
+  /* Phone: facts above the text, no contents list. Laptop: text with facts and contents
+     beside it. Ultra-wide: contents, text and facts as three panes. */
+  .doc {
+    display: grid;
+    gap: var(--space-l);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "crumbs" "head" "facts" "body";
+  }
+  .crumbs { grid-area: crumbs; }
+  .doc-head { grid-area: head; }
+  .facts { grid-area: facts; }
+  .toc { grid-area: toc; display: none; }
+  .doc-body { grid-area: body; min-inline-size: 0; }
+  @media (min-width: 64rem) {
+    .doc {
+      max-inline-size: 78rem;
+      grid-template-columns: minmax(0, var(--measure)) minmax(15rem, 1fr);
+      grid-template-rows: auto auto auto 1fr;
+      grid-template-areas: "crumbs crumbs" "head head" "body facts" "body toc";
+      column-gap: var(--space-xl);
+      align-items: start;
+    }
+    .toc { display: block; }
+  }
+  @media (min-width: 110rem) {
+    .doc {
+      max-inline-size: 150rem;
+      grid-template-columns: minmax(14rem, 28ch) minmax(0, var(--measure)) minmax(16rem, 38ch);
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: "crumbs crumbs crumbs" ". head ." "toc body facts";
+      justify-content: center;
+    }
+  }
+
+  /* ---- work index: panes tile one, two or three across ---- */
+  .work-index { display: grid; gap: var(--space-l); grid-template-columns: minmax(0, 1fr); }
+  .work-index > * { grid-area: auto; }
+  .work-index .doc-head { max-inline-size: var(--measure); }
+  @media (min-width: 64rem) {
+    .work-index { max-inline-size: 120rem; }
+  }
+
+  .foot {
+    border-block-start: 1px solid var(--line);
+    background: var(--surface);
+    font-size: var(--step--1);
+    color: var(--dim);
+  }
+  .foot-in {
+    display: grid;
+    gap: var(--space-2xs);
+    max-inline-size: 160rem;
+    margin-inline: auto;
+    padding: var(--space-m) var(--gutter) var(--space-l);
+  }
+}
+
+@layer components {
+  /* ---- panes: a thin frame with the title set into the top border, as tmux draws it ---- */
+  .pane {
+    position: relative;
+    container-type: inline-size;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-l) var(--space-m) var(--space-m);
+    transition: border-color var(--dur-2) var(--ease-out);
+  }
+  .pane:is(:hover, :focus-within) { border-color: color-mix(in oklab, var(--accent) 60%, var(--line)); }
+  .pane-title {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: var(--space-s);
+    translate: 0 -50%;
+    padding-inline: 0.6ch;
+    background: var(--bg);
+    color: var(--dim);
+    font-size: var(--step--1);
+    font-weight: 500;
+    line-height: 1.4;
+    transition: color var(--dur-2) var(--ease-out);
+  }
+  .pane:is(:hover, :focus-within) .pane-title { color: var(--bright); }
+  .pane-n { color: var(--accent); }
+  .pane-n::after { content: " "; }
+  /* Side panes that stay in view while the text scrolls, only when they fit the screen.
+     Declared after .pane so sticky wins over its position: relative. */
+  @media (min-width: 64rem) and (min-height: 44rem) {
+    .toc { position: sticky; inset-block-start: calc(var(--bar-h) + var(--space-l)); }
+  }
+  @media (min-width: 64rem) and (min-height: 35rem) {
+    .pane-intro { position: sticky; inset-block-start: calc(var(--bar-h) + var(--space-l)); }
+  }
+  /* Only where it is pinned: an inset on the unpinned (position: relative) pane would shift it. */
+  @media (min-width: 64rem) and (min-height: 35rem) and (max-height: 43.99rem) {
+    .pane-intro { inset-block-start: calc(var(--bar-h) + var(--space-s)); }
+  }
+  @media (min-width: 110rem) and (min-height: 44rem) {
+    .facts { position: sticky; inset-block-start: calc(var(--bar-h) + var(--space-l)); }
+  }
+  /* Phones: only the top border with its title, so the text gets the full width. */
+  @media (max-width: 40rem) {
+    .pane { border-width: 1px 0 0; border-radius: 0; padding-inline: 0; padding-block-end: 0; }
+    .pane-title { inset-inline-start: 0; padding-inline: 0 0.8ch; }
+  }
+
+  /* ---- intro ---- */
+  .intro {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "pp head" "lede lede" "status status" "actions actions";
+    column-gap: var(--space-s);
+    row-gap: var(--space-s);
+    align-items: center;
+  }
+  .intro .pp { grid-area: pp; --pp-size: clamp(7.5rem, 30vw, 10rem); }
+  .intro-head { grid-area: head; }
+  .intro .lede { grid-area: lede; max-inline-size: 62ch; }
+  .intro .status { grid-area: status; }
+  .intro .actions { grid-area: actions; }
+  .lede { color: var(--text); }
+  h1 {
+    font-size: var(--step-4);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .role { margin-block-start: var(--space-2xs); color: var(--dim); font-size: var(--step--1); }
+  .role span { display: block; }
+  @container (min-width: 34rem) {
+    .intro {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: "pp head" "pp lede" "pp status" "pp actions";
+      column-gap: var(--space-l);
+      align-items: start;
+    }
+    .intro .pp { --pp-size: 13.75rem; }
+  }
+  /* In the narrow sticky column of the two and three pane layouts, stack again. */
+  @media (min-width: 64rem) {
+    .pane-intro .intro {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "pp" "head" "lede" "status" "actions";
+    }
+    .pane-intro .pp { --pp-size: min(15rem, 100%); }
+  }
+  @media (min-width: 110rem) {
+    .pane-intro .pp { --pp-size: min(17.5rem, 100%); }
+  }
+  /* Screens too short for the full intro (about 910 px, or 960 px where the type steps up
+     at 125rem): portrait beside the name, so the whole pane, actions included, fits and pins. */
+  @media (min-width: 64rem) and (max-height: 58.99rem), (min-width: 125rem) and (max-height: 61.99rem) {
+    .pane-intro .intro {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: "pp head" "lede lede" "status status" "actions actions";
+      align-items: center;
+    }
+    .pane-intro .pp { --pp-size: 8.5rem; }
+    .pane-intro h1 { font-size: var(--step-3); font-size: min(var(--step-3), 9cqi); }
+  }
+  /* Very short windows (a 1366x768 laptop once the browser's own bars are drawn): tighter still. */
+  @media (min-width: 64rem) and (max-height: 43.99rem) {
+    .home { padding-block-start: var(--space-s); }
+    .pane-intro { padding-block-start: var(--space-m); }
+    .pane-intro .intro { row-gap: var(--space-xs); }
+    .pane-intro .pp { --pp-size: 7rem; }
+  }
+  @media (min-width: 64rem) and (min-height: 35rem) and (max-height: 43.99rem) {
+    .pane-intro .pp { --pp-size: 6rem; }
+  }
+
+  .status {
+    display: flex;
+    gap: 1ch;
+    align-items: baseline;
+    color: var(--bright);
+    font-size: var(--step--1);
+  }
+  .status::before {
+    content: "";
+    flex: none;
+    inline-size: 0.55em;
+    block-size: 0.55em;
+    border-radius: 50%;
+    background: var(--accent);
+    translate: 0 -0.05em;
+  }
+
+  .actions { display: flex; flex-wrap: wrap; gap: var(--space-2xs); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6ch;
+    min-block-size: 2.75rem;
+    padding: 0 1.2ch;
+    border: 1px solid var(--control);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--bright);
+    font-size: var(--step--1);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { background: var(--bright); border-color: var(--bright); color: var(--on-accent); }
+  .btn[hidden] { display: none; }
+
+  /* ---- the portrait (pixel-portrait.js adds the canvas; without it the img is the content) ---- */
+  .pp {
+    position: relative;
+    inline-size: var(--pp-size, 15rem);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--portrait-bg);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pp picture, .pp img { inline-size: 100%; block-size: 100%; }
+  .pp img { object-fit: cover; object-position: var(--focus, 50% 50%); }
+  .pp-canvas {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+  .pp:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+  /* ---- work entries: stacked in a narrow pane, two columns in a wide one ---- */
+  .entries { display: grid; gap: var(--space-l); }
+  .entry { display: grid; gap: var(--space-2xs); }
+  .entry h3 { font-size: var(--step-1); }
+  .entry h3 a { color: var(--bright); text-decoration: none; }
+  .entry h3 a:hover { color: var(--accent); }
+  .entry-proof { color: var(--bright); font-size: var(--step--1); padding-inline-start: 2.2ch; text-indent: -2.2ch; }
+  .entry-proof::before { content: "\2713"; content: "\2713" / ""; display: inline-block; inline-size: 2.2ch; text-indent: 0; color: var(--accent); }
+  .entry-more { font-size: var(--step--1); justify-self: start; }
+  .entry-more::after { content: " \2192"; content: " \2192" / ""; }
+  @container (min-width: 46rem) {
+    .entry { grid-template-columns: 17ch minmax(0, 1fr); column-gap: var(--space-m); }
+    .entry > * { grid-column: 2; }
+    .entry > h3, .entry > .tags { grid-column: 1; }
+    .entry > h3 { grid-row: 1; }
+    .entry > .tags { grid-row: 2 / span 3; align-self: start; flex-direction: column; align-items: flex-start; }
+  }
+  .grid-entries { display: grid; gap: var(--space-xl) var(--space-l); grid-template-columns: repeat(auto-fill, minmax(min(100%, 44ch), 1fr)); }
+  .grid-entries > .pane { display: grid; gap: var(--space-2xs); align-content: start; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; }
+  .tag {
+    padding: 0 0.6ch;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--teal);
+    font-size: var(--step--1);
+    line-height: 1.6;
+  }
+  .tag-status { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 45%, var(--line)); }
+
+  .more { margin-block-start: var(--space-m); font-size: var(--step--1); }
+  .also { color: var(--dim); font-size: var(--step--1); max-inline-size: var(--measure); }
+  .more a::after { content: " \2192"; content: " \2192" / ""; }
+
+  /* ---- experience log: date column when there is room ---- */
+  .log { display: grid; gap: var(--space-m); }
+  .log li { display: grid; gap: 0.15rem; }
+  .log h3 { font-size: var(--step-0); }
+  .log .when { color: var(--dim); font-size: var(--step--1); }
+  .log ul { display: grid; gap: var(--space-2xs); margin-block-start: var(--space-2xs); padding-inline-start: 2ch; list-style: none; }
+  .log ul li { position: relative; display: block; }
+  .log ul li::before { content: "-"; position: absolute; inset-inline-start: -2ch; color: var(--dim); }
+  @container (min-width: 40rem) {
+    .log li { grid-template-columns: 15ch minmax(0, 1fr); column-gap: var(--space-m); }
+    .log .when { grid-row: 1 / span 3; padding-block-start: 0.2em; }
+    .log li > :not(.when) { grid-column: 2; }
+    .log ul li { display: block; }
+  }
+
+  /* ---- contact ---- */
+  .contact { display: grid; gap: var(--space-s); }
+  .contact dl { display: grid; gap: var(--space-2xs) var(--space-m); grid-template-columns: max-content minmax(0, 1fr); }
+  .contact dt { color: var(--dim); }
+  .contact dd { overflow-wrap: anywhere; }
+  .copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1ch; }
+  .copy {
+    min-block-size: 1.9rem;
+    padding: 0 0.8ch;
+    border: 1px solid var(--control);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--dim);
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .copy:hover { color: var(--bright); border-color: var(--accent); }
+  .copy[hidden] { display: none; }
+  .copy-status { color: var(--accent); font-size: var(--step--1); }
+
+  /* ---- documents (case studies, CV) ---- */
+  .crumbs ol { display: flex; flex-wrap: wrap; gap: 0; color: var(--dim); font-size: var(--step--1); }
+  .crumbs li + li::before { content: "/"; content: "/" / ""; padding-inline: 0.4ch; color: var(--dim); }
+  .crumbs li:first-child::before { content: "~/"; content: "~/" / ""; }
+  .crumbs a { color: var(--dim); }
+  .crumbs a:hover { color: var(--accent); }
+  .crumbs [aria-current] { color: var(--bright); }
+  .doc-head { display: grid; gap: var(--space-s); }
+  .doc-head h1 { font-size: var(--step-4); }
+  .doc-head .lede { font-size: var(--step-1); line-height: 1.5; color: var(--text); }
+  .facts dl { display: grid; gap: var(--space-xs); }
+  .facts dt { color: var(--dim); font-size: var(--step--1); }
+  .facts dd { color: var(--bright); }
+  .toc ol { display: grid; gap: 0.15rem; counter-reset: toc; font-size: var(--step--1); }
+  .toc li { counter-increment: toc; }
+  .toc a { display: block; padding: 0.2rem 0; color: var(--dim); text-decoration: none; }
+  .toc a::before { content: counter(toc) " "; color: var(--accent); }
+  .toc a:hover, .toc a[aria-current="location"] { color: var(--bright); }
+  .toc a[aria-current="location"]::after { content: " \25C2"; content: " \25C2" / ""; color: var(--accent); }
+
+  .prose { display: grid; gap: var(--space-xl); }
+  .prose section { display: grid; gap: var(--space-s); }
+  .prose h2 { font-size: var(--step-2); }
+  .prose h2::before { content: "## "; content: "## " / ""; color: var(--accent); font-weight: 400; }
+  .prose ul { display: grid; gap: var(--space-2xs); padding-inline-start: 2ch; list-style: none; }
+  .prose ul li { position: relative; }
+  .prose ul li::before { content: "-"; position: absolute; inset-inline-start: -2ch; color: var(--accent); }
+  .prose .note { color: var(--dim); font-size: var(--step--1); }
+
+  /* An ordered flow drawn as connected boxes: a diagram that is also a list. */
+  .flow-fig { display: grid; gap: var(--space-xs); margin: 0; }
+  .flow-fig figcaption { color: var(--dim); font-size: var(--step--1); }
+  .flow { display: grid; gap: 0; counter-reset: flow; }
+  .flow > li {
+    position: relative;
+    counter-increment: flow;
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+  .flow > li + li { margin-block-start: var(--space-m); }
+  .flow > li + li::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 1.6rem;
+    inset-block-start: calc(-1 * var(--space-m) - 1px);
+    block-size: var(--space-m);
+    border-inline-start: 1px solid var(--accent);
+  }
+  .flow-k { display: block; color: var(--dim); font-size: var(--step--1); }
+  .flow-k::before { content: counter(flow) "  "; color: var(--accent); }
+  .flow strong { display: block; }
+  .flow .tags { margin-block-start: var(--space-2xs); }
+  .flow .warn { display: block; margin-block-start: 0.2rem; color: var(--bright); font-weight: 600; }
+
+  /* ---- CV ---- */
+  .cv { display: grid; gap: var(--space-xl); }
+  .cv-head { display: grid; gap: var(--space-2xs); }
+  .cv-head h1 { font-size: var(--step-4); }
+  .cv-contact { display: flex; flex-wrap: wrap; gap: 0.2rem 2ch; color: var(--dim); font-size: var(--step--1); }
+  .cv section { display: grid; gap: var(--space-s); }
+  .cv h2 { font-size: var(--step--1); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; padding-block-end: var(--space-3xs); border-block-end: 1px solid var(--line); }
+  .cv h3 { font-size: var(--step-0); }
+  .cv .item { display: grid; gap: var(--space-3xs); }
+  .cv .item-meta { color: var(--dim); font-size: var(--step--1); }
+  .cv ul { display: grid; gap: var(--space-2xs); padding-inline-start: 2ch; list-style: none; }
+  .cv ul li { position: relative; }
+  .cv ul li::before { content: "-"; position: absolute; inset-inline-start: -2ch; color: var(--dim); }
+  .cv dl { display: grid; gap: var(--space-2xs) var(--space-m); }
+  .cv dt { color: var(--dim); font-size: var(--step--1); }
+  @container (min-width: 40rem) {
+    .cv dl { grid-template-columns: 18ch minmax(0, 1fr); }
+  }
+  .cv-wrap { container-type: inline-size; }
+
+  /* ---- footer ---- */
+  .colophon { max-inline-size: 90ch; }
+  .eof { color: var(--dim); }
+  .eof .prompt { color: var(--accent); }
+  .cursor {
+    display: inline-block;
+    inline-size: 0.6em;
+    block-size: 1.1em;
+    vertical-align: text-bottom;
+    background: var(--accent);
+  }
+
+  /* ---- 404 ---- */
+  .lost { display: grid; gap: var(--space-m); align-content: center; min-block-size: 50vh; }
+  .lost pre { margin: 0; color: var(--dim); white-space: pre-wrap; font: inherit; }
+
+  /* ---- skip link and screen-reader-only text ---- */
+  .skip {
+    position: absolute;
+    inset-inline-start: var(--space-s);
+    inset-block-start: -10rem;
+    z-index: 20;
+    padding: 0.5rem 0.9ch;
+    border-radius: 4px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+  .skip:focus { inset-block-start: 0.4rem; }
+  /* Buttons that only work with JavaScript are absent without it. theme.js sets .js in the
+     head, so they are in place from the first paint and nothing shifts. */
+  html:not(.js) .js-only, .js-only[hidden] { display: none; }
+  .visually-hidden {
+    position: absolute !important;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (forced-colors: active) {
+    .pane, .flow > li, .tag, .btn, .theme, .copy { border-color: CanvasText; }
+    .session, .btn-primary { forced-color-adjust: none; }
+    .status::before, .cursor { background: CanvasText; }
+  }
+}
+
+@layer motion {
+  /* The portrait is the one authored motion moment. Everything else is a colour fade on
+     hover, a calm cross-fade between pages, and a cursor that blinks four times and stops. */
+  @media (prefers-reduced-motion: no-preference) {
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }
+    .bar { view-transition-name: status-line; }
+    .cursor { animation: blink 1.06s steps(1, end) 4; }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; }
+  }
+}
+
+@layer print {
+  @media print {
+    @page { size: A4; margin: 16mm 15mm; }
+    :root {
+      color-scheme: light;
+      --bg: #fff; --surface: #fff; --line: #bbb; --control: #777; --text: #111; --bright: #000;
+      --dim: #444; --accent: #2f4410; --link: #000; --teal: #1d4f48;
+    }
+    body { font-size: 9.5pt; line-height: 1.45; }
+    .bar, .skip, .actions, .theme, .copy, .copy-status, .toc, .eof, .pp-canvas, .crumbs, [data-print] { display: none !important; }
+    .page { max-inline-size: none; padding: 0; }
+    .home, .doc { display: block; }
+    .home > * + *, .doc > * + * { margin-block-start: 6mm; }
+    .pane { border: 0; padding: 0; }
+    .pane-title { position: static; translate: none; padding: 0; margin-block-end: 2mm; color: #000; font-weight: 600; }
+    .pane-intro .pp { --pp-size: 28mm; }
+    .entry, .log li, .cv .item { break-inside: avoid; }
+    a { color: #000; text-decoration: none; }
+    .screen-only, .entry-more:not([href^="http"]), .foot { display: none; }
+    .flow-fig, .flow { display: block; }
+    .home .more, .flow > li + li::before { display: none; }
+    .grid-entries > .pane { break-inside: avoid-page; }
+    .prose { gap: 6mm; }
+    .prose section { gap: 2mm; }
+    .doc-head .lede { font-size: 11pt; }
+    .flow > li + li { margin-block-start: 2mm; }
+    .doc-head::before { content: "Florin Hrib \00B7  florinhrib.dev"; display: block; margin-block-end: 2mm; color: #444; font-size: 9pt; }
+    .flow-fig figcaption { margin-block-start: 2mm; }
+    .cv-keep, .flow > li { break-inside: avoid-page; }
+    h2 { break-after: avoid-page; }
+    .prose a[href^="http"]:not(.url-text)::after, .cv a[href^="http"]:not(.url-text)::after, .entries .entry-more[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.9em; color: #444; }
+    .foot { background: none; border-color: #bbb; }
+  }
+}

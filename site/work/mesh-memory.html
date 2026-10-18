@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mesh-memory · Florin Hrib</title>
+  <meta name="description" content="mesh-memory, an MCP server that gives a fleet of agents one keyword index over shared notes: design, security, test results and limits.">
+  <link rel="canonical" href="https://florinhrib.dev/work/mesh-memory">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b1211" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f7f4ea" media="(prefers-color-scheme: light)">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="mesh-memory · Florin Hrib">
+  <meta property="og:description" content="An MCP server that gives a fleet of agents one keyword index over shared notes.">
+  <meta property="og:url" content="https://florinhrib.dev/work/mesh-memory">
+  <meta property="og:image" content="https://florinhrib.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Florin Hrib, agent systems on Claude, with his illustrated portrait.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/icon-180.png">
+  <link rel="manifest" href="../site.webmanifest">
+  <link rel="preload" href="../assets/fonts/jetbrains-mono-400-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../theme.js"></script>
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="bar">
+    <div class="bar-in">
+      <a class="session" href="../">florinhrib</a>
+      <nav class="windows" aria-label="Main">
+        <ol>
+          <li><a href="../"><span class="win-n" aria-hidden="true">0</span>home</a></li>
+          <li><a href="./" aria-current="page"><span class="win-n" aria-hidden="true">1</span>work</a></li>
+          <li><a href="../cv.html"><span class="win-n" aria-hidden="true">2</span>cv</a></li>
+        </ol>
+      </nav>
+      <button class="theme js-only" type="button" data-theme-toggle><span aria-hidden="true">&#9680;</span><span class="theme-label">theme</span></button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" class="page doc">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../">home</a></li>
+        <li><a href="./">work</a></li>
+        <li aria-current="page">mesh-memory</li>
+      </ol>
+    </nav>
+
+    <header class="doc-head">
+      <h1>mesh-memory</h1>
+      <p class="lede">An MCP server that gives agents across my machines one keyword index over shared notes.</p>
+    </header>
+
+    <aside class="pane facts" aria-labelledby="facts-title">
+      <h2 class="pane-title" id="facts-title">facts</h2>
+      <dl>
+        <div><dt>built</dt><dd><time datetime="2026-10-15">15 Oct 2026</time>, in one Claude Code session</dd></div>
+        <div><dt>code</dt><dd>Private repository</dd></div>
+        <div><dt>stack</dt><dd>TypeScript, SQLite FTS5, MCP over streamable HTTP</dd></div>
+        <div><dt>recall</dt><dd>9 of 10 test questions answered in the top 5, at build</dd></div>
+        <div><dt>review</dt><dd>Fixes from an independent security review</dd></div>
+      </dl>
+    </aside>
+
+    <nav class="pane toc" aria-labelledby="toc-title">
+      <h2 class="pane-title" id="toc-title">contents</h2>
+      <ol>
+        <li><a href="#what">What it does</a></li>
+        <li><a href="#how">How it fits together</a></li>
+        <li><a href="#decisions">Decisions</a></li>
+        <li><a href="#results">Results</a></li>
+        <li><a href="#limits">Limits</a></li>
+      </ol>
+    </nav>
+
+    <article class="doc-body prose">
+      <section id="what" aria-labelledby="what-title">
+        <h2 id="what-title">What it does</h2>
+        <p>My agents keep their notes, lessons and project records as Markdown files. mesh-memory indexes those files and lets any connected agent search and read them through three MCP tools: <code>memory_search</code>, <code>memory_read</code> and <code>memory_sources</code>.</p>
+      </section>
+
+      <section id="how" aria-labelledby="how-title">
+        <h2 id="how-title">How it fits together</h2>
+        <figure class="flow-fig">
+          <ol class="flow">
+          <li>
+            <span class="flow-k">source</span>
+            <strong>Markdown notes</strong>
+            The files stay the source of truth.
+          </li>
+          <li>
+            <span class="flow-k">clean</span>
+            <strong>gitleaks scan</strong>
+            Before anything is stored, gitleaks scans the tree and every secret it finds is replaced by <code>[REDACTED]</code>.
+          </li>
+          <li>
+            <span class="flow-k">index</span>
+            <strong>One SQLite FTS5 index</strong>
+            Full-text search with BM25 ranking.
+          </li>
+          <li>
+            <span class="flow-k">serve</span>
+            <strong>MCP over streamable HTTP</strong>
+            Every route except <code>/health</code> needs a bearer token.
+            <span class="tags"><span class="tag">memory_search</span><span class="tag">memory_read</span><span class="tag">memory_sources</span></span>
+          </li>
+        </ol>
+          <figcaption>How a note becomes searchable.</figcaption>
+        </figure>
+      </section>
+
+      <section id="decisions" aria-labelledby="decisions-title">
+        <h2 id="decisions-title">Decisions</h2>
+        <ul>
+          <li><strong>Markdown stays the truth.</strong> The index sits beside the notes; it does not replace them.</li>
+          <li><strong>Keyword search first.</strong> One SQLite FTS5 index with BM25 ranking, served over MCP.</li>
+          <li><strong>Redact before storing.</strong> Secrets that gitleaks finds are replaced before anything reaches the index.</li>
+          <li><strong>A token on every route.</strong> Only the health check is open.</li>
+        </ul>
+      </section>
+
+      <section id="results" aria-labelledby="results-title">
+        <h2 id="results-title">Results</h2>
+        <ul>
+          <li>A 10-question recall test set: 9 of 10 answers in the top 5 results at build.</li>
+          <li>An independent security review on the day it was built; its fixes are in the code.</li>
+        </ul>
+      </section>
+
+      <section id="limits" aria-labelledby="limits-title">
+        <h2 id="limits-title">Limits</h2>
+        <ul>
+          <li>It is keyword search, not semantic search.</li>
+          <li>Not every agent is connected. Some are left out on purpose, one gets only the command-line client, and each machine is set up by hand.</li>
+          <li>It was written with Claude Code in a single session. The recall test and the security review are how I checked it.</li>
+        </ul>
+      </section>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-in">
+      <p>Florin Hrib · Kent, UK · <a href="mailto:hello@florinstudio.uk">hello@florinstudio.uk</a></p>
+      <p class="colophon">Plain HTML and CSS with a little JavaScript. No framework, no cookies, no tracking. Updated <time datetime="2026-10-18">18 Oct 2026</time>.</p>
+      <p class="eof" aria-hidden="true"><span class="prompt">$</span> <span class="cursor"></span></p>
+    </div>
+  </footer>
+</body>
+</html>

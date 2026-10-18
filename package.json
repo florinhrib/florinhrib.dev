@@ -1,0 +1,12 @@
+{
+  "name": "florinhrib-dev",
+  "private": true,
+  "description": "Florin Hrib's personal site (static, no build step)",
+  "scripts": {
+    "preview": "./preview.sh",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.1"
+  }
+}

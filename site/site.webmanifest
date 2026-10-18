@@ -1,0 +1,13 @@
+{
+  "name": "Florin Hrib",
+  "short_name": "florinhrib",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0b1211",
+  "theme_color": "#0b1211",
+  "icons": [
+    { "src": "/assets/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

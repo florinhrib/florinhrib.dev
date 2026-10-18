@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // florinhrib.dev: static files only (no Worker script). Cloudflare now serves Pages-style
+  // sites from Workers static assets; _headers in site/ sets the security headers.
+  "name": "florinhrib",
+  "compatibility_date": "2026-10-12",
+  "assets": {
+    "directory": "site",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "florinhrib.dev", "custom_domain": true },
+    { "pattern": "www.florinhrib.dev", "custom_domain": true }
+  ],
+  "observability": { "enabled": false }
+}
